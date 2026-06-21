@@ -1,4 +1,9 @@
-"""Shared pytest fixtures.
+"""Shared pytest fixtures and environment setup.
 
-Empty for now; fixtures land alongside the eval framework in M1.
+Force the human-grade lens to auto-skip during tests so the suite never blocks
+on stdin, regardless of how the test runner is invoked.
 """
+
+import os
+
+os.environ["SKIP_HUMAN_EVAL"] = "1"

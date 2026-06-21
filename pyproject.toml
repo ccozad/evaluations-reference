@@ -1,6 +1,6 @@
 [project]
 name = "evaluations-reference"
-version = "0.0.0"
+version = "0.1.0"
 description = "A production-mindful, three-lens evaluation harness for LLM systems: deterministic checks, model-as-judge, and human-grade, with a side-by-side prompt comparison flow."
 readme = "README.md"
 license = { text = "MIT" }
@@ -9,7 +9,13 @@ authors = [{ name = "Charles Cozad" }]
 dependencies = [
     "anthropic>=0.40",
     "gradio>=5.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
 ]
+
+[project.scripts]
+evals = "evaluations_reference.cli:main"
 
 [project.urls]
 Repository = "https://github.com/ccozad/evaluations-reference"

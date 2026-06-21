@@ -1,0 +1,30 @@
+{
+  "name": "sample-qa",
+  "description": "A small hand-written dataset exercising all three lenses.",
+  "rubric": "Score relevance by whether the answer addresses the question. Score faithfulness by whether the answer is consistent with the reference and adds no unsupported claims.",
+  "lens_config": {
+    "enabled": ["code", "judge", "human"],
+    "checks": [
+      { "name": "length_bounds", "params": { "min": 1, "max": 200 } },
+      { "name": "max_sentences", "params": { "max": 2 } },
+      { "name": "keyword_absent", "params": { "keywords": ["lorem ipsum"] } }
+    ]
+  },
+  "test_cases": [
+    {
+      "input": "What is the capital of France?",
+      "expected": "The capital of France is Paris.",
+      "metadata": { "topic": "geography" }
+    },
+    {
+      "input": "Name a primary color.",
+      "expected": "Red is a primary color.",
+      "metadata": { "topic": "art" }
+    },
+    {
+      "input": "What does HTTP stand for?",
+      "expected": "HTTP stands for HyperText Transfer Protocol.",
+      "metadata": { "topic": "tech" }
+    }
+  ]
+}
