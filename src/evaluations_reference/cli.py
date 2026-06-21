@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 
 import pydantic
+from dotenv import find_dotenv, load_dotenv
 from rich.console import Console
 from rich.table import Table
 
@@ -92,6 +93,11 @@ def _cmd_describe(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Load a local .env (e.g. ANTHROPIC_API_KEY) for local runs, searching from
+    # the current working directory upward. Does not override variables already
+    # set in the environment.
+    load_dotenv(find_dotenv(usecwd=True))
+
     parser = argparse.ArgumentParser(prog="evals", description="Three-lens LLM eval harness.")
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="enable debug logging on stderr"
