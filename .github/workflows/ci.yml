@@ -38,3 +38,31 @@ jobs:
 
       - name: Pytest
         run: uv run pytest
+
+  live-eval:
+    # Runs the sample dataset through all three lenses against the real judge
+    # model. Informational (not a required check): it grades a tiny 3-case
+    # dataset and skips gracefully when the ANTHROPIC_API_KEY secret is absent
+    # (e.g. pull requests from forks).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run sample eval against the judge model
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SKIP_HUMAN_EVAL: "1"
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "ANTHROPIC_API_KEY secret not set — skipping live judge eval."
+            exit 0
+          fi
+          uv run evals run examples/sample_dataset.json
