@@ -13,6 +13,11 @@ venv/
 dist/
 build/
 
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
 # Editor / OS noise
 .idea/
 .vscode/
