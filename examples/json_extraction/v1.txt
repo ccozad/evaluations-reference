@@ -1,0 +1,1 @@
+Extract the invoice fields from the text and respond with ONLY a valid JSON object. Include invoice_number and total, plus date and customer when present. Do not wrap the JSON in markdown fences and do not add any prose.

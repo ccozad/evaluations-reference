@@ -57,6 +57,19 @@ def test_max_sentences() -> None:
     assert _run("max_sentences", "One. Two. Three.", max=2) == (0.0, False)
 
 
+def test_contains_expected() -> None:
+    pos = TestCase(input="x", expected="positive")
+    assert code_checks.run_check("contains_expected", pos, "Sentiment: POSITIVE", {}).passed
+    assert not code_checks.run_check("contains_expected", pos, "it's negative", {}).passed
+    # Case-sensitive mode
+    assert not code_checks.run_check(
+        "contains_expected", pos, "POSITIVE", {"case_sensitive": True}
+    ).passed
+    # No expected -> vacuously passes
+    none_case = TestCase(input="x")
+    assert code_checks.run_check("contains_expected", none_case, "anything", {}).passed
+
+
 def test_unknown_check_raises() -> None:
     with pytest.raises(KeyError):
         code_checks.run_check("does_not_exist", CASE, "out", {})

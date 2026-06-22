@@ -1,0 +1,29 @@
+{
+  "name": "json-extraction",
+  "description": "Extract structured fields from invoice-style text as JSON.",
+  "rubric": "Score relevance (0-10) by whether the output extracts the requested invoice fields (invoice number, total, and any others present). Score faithfulness (0-10) by whether the extracted values exactly match the source text and the output is valid JSON with no invented fields.",
+  "lens_config": {
+    "enabled": ["code", "judge"],
+    "checks": [
+      { "name": "json_valid", "params": {} },
+      { "name": "keyword_present", "params": { "keywords": ["invoice_number", "total"] } }
+    ]
+  },
+  "test_cases": [
+    {
+      "input": "Invoice #A-100 dated 2024-02-01. Bill to: Acme Corp. Total due: $250.00.",
+      "expected": "{\"invoice_number\": \"A-100\", \"date\": \"2024-02-01\", \"customer\": \"Acme Corp\", \"total\": 250.00}",
+      "metadata": { "fields": 4 }
+    },
+    {
+      "input": "Receipt number 7782, billed to Globex, amount $99.50, paid on 2024-03-12.",
+      "expected": "{\"invoice_number\": \"7782\", \"date\": \"2024-03-12\", \"customer\": \"Globex\", \"total\": 99.50}",
+      "metadata": { "fields": 4 }
+    },
+    {
+      "input": "INV-555 — Initech — subtotal $80.00, tax $6.40, total $86.40.",
+      "expected": "{\"invoice_number\": \"INV-555\", \"customer\": \"Initech\", \"subtotal\": 80.00, \"tax\": 6.40, \"total\": 86.40}",
+      "metadata": { "fields": 5 }
+    }
+  ]
+}
