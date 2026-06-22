@@ -147,3 +147,21 @@ def _max_sentences(case: TestCase, output: str, params: dict[str, Any]) -> tuple
     if n > limit:
         return _bool_result(False, f"{n} sentences > max {limit}")
     return _bool_result(True, f"{n} sentences within max {limit}")
+
+
+@register("contains_expected")
+def _contains_expected(
+    case: TestCase, output: str, params: dict[str, Any]
+) -> tuple[float, bool, str]:
+    """Pass when the case's ``expected`` value appears in the output.
+
+    Useful for per-case label matching (e.g. sentiment) where the target varies
+    by test case. Case-insensitive unless ``case_sensitive`` is set. Passes
+    vacuously when the case has no ``expected``.
+    """
+    if case.expected is None:
+        return _bool_result(True, "no expected value to match")
+    cs = bool(params.get("case_sensitive"))
+    if _normalize(case.expected, cs) in _normalize(output, cs):
+        return _bool_result(True, f"output contains expected {case.expected!r}")
+    return _bool_result(False, f"output missing expected {case.expected!r}")

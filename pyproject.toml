@@ -1,6 +1,6 @@
 [project]
 name = "evaluations-reference"
-version = "0.3.0"
+version = "1.0.0"
 description = "A production-mindful, three-lens evaluation harness for LLM systems: deterministic checks, model-as-judge, and human-grade, with a side-by-side prompt comparison flow."
 readme = "README.md"
 license = { text = "MIT" }

@@ -1,0 +1,29 @@
+{
+  "name": "summarization-quality",
+  "description": "Summarize a short article faithfully and concisely.",
+  "rubric": "Score relevance (0-10) by whether the summary captures the article's main point. Score faithfulness (0-10) by whether the summary contains only information supported by the article, with no added opinion, speculation, or fabricated detail.",
+  "lens_config": {
+    "enabled": ["code", "judge"],
+    "checks": [
+      { "name": "length_bounds", "params": { "min": 20, "max": 320 } },
+      { "name": "max_sentences", "params": { "max": 3 } }
+    ]
+  },
+  "test_cases": [
+    {
+      "input": "The city council voted 7-2 on Tuesday to approve a new bike-lane network spanning 14 miles downtown. Construction begins in spring and is funded by a federal transportation grant. Officials expect the project to reduce car traffic and take two years to complete.",
+      "expected": "The city council approved a 14-mile downtown bike-lane network, federally funded and starting in spring, expected to take two years and reduce car traffic.",
+      "metadata": { "topic": "civic" }
+    },
+    {
+      "input": "Researchers reported that a new battery chemistry retained 90 percent of its capacity after 2,000 charge cycles in lab tests. The team cautioned that results have not yet been replicated at commercial scale and that manufacturing costs remain unknown.",
+      "expected": "A new battery chemistry kept 90% capacity after 2,000 cycles in lab tests, though the results are not yet proven at scale and costs are unknown.",
+      "metadata": { "topic": "science" }
+    },
+    {
+      "input": "The quarterly report showed revenue up 12 percent year over year, driven mainly by subscription growth. Operating costs also rose, and the company declined to give guidance for the next quarter, citing market uncertainty.",
+      "expected": "Quarterly revenue rose 12% year over year on subscription growth, but operating costs increased and the company gave no guidance for next quarter.",
+      "metadata": { "topic": "business" }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "sentiment-classification",
+  "description": "Classify a short text as positive, negative, or neutral.",
+  "rubric": "Score relevance (0-10) by whether the response identifies the correct sentiment label for the input. Score faithfulness (0-10) by whether the response matches the reference label and avoids unsupported claims or hedging.",
+  "lens_config": {
+    "enabled": ["code", "judge"],
+    "checks": [
+      { "name": "contains_expected", "params": {} },
+      { "name": "max_sentences", "params": { "max": 1 } }
+    ]
+  },
+  "test_cases": [
+    { "input": "I absolutely love this product — it works perfectly!", "expected": "positive", "metadata": { "label": "positive" } },
+    { "input": "This is the worst purchase I have ever made.", "expected": "negative", "metadata": { "label": "negative" } },
+    { "input": "The item arrived on time and functions as described.", "expected": "neutral", "metadata": { "label": "neutral" } },
+    { "input": "Terrible customer service, I am never buying here again.", "expected": "negative", "metadata": { "label": "negative" } },
+    { "input": "It's okay — nothing special, but it does the job.", "expected": "neutral", "metadata": { "label": "neutral" } }
+  ]
+}
