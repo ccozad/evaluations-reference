@@ -1,6 +1,6 @@
 [project]
 name = "evaluations-reference"
-version = "0.1.0"
+version = "0.2.0"
 description = "A production-mindful, three-lens evaluation harness for LLM systems: deterministic checks, model-as-judge, and human-grade, with a side-by-side prompt comparison flow."
 readme = "README.md"
 license = { text = "MIT" }
@@ -33,6 +33,7 @@ dev = [
     "ruff>=0.8",
     "pyright>=1.1.390",
     "pytest>=8.0",
+    "pytest-cov>=5.0",
 ]
 
 [tool.ruff]
@@ -51,4 +52,14 @@ venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra"
+addopts = "-ra --cov=evaluations_reference --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+source = ["evaluations_reference"]
+
+[tool.coverage.report]
+exclude_also = [
+    "\\.\\.\\.",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

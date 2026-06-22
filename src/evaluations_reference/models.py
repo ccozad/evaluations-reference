@@ -113,6 +113,9 @@ class LensResult(BaseModel):
 class TestCaseResult(BaseModel):
     """All lens results for a single test case, plus the produced output."""
 
+    # Tell pytest this is not a test class (name starts with "Test").
+    __test__ = False
+
     test_case: TestCase
     output: str
     lens_results: list[LensResult] = Field(default_factory=list)
