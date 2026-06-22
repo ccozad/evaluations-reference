@@ -8,7 +8,7 @@ deltas, per-test-case winners, and an overall verdict.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ from evaluations_reference.models import (
     LensResult,
     TestCase,
 )
-from evaluations_reference.runner import run_eval
+from evaluations_reference.runner import ProgressFn, run_eval
 
 # Score difference below which a per-case result is a tie.
 TIE_EPSILON = 1e-9
@@ -37,6 +37,16 @@ class LensDelta(BaseModel):
     delta: float | None
 
 
+class CaseLensComparison(BaseModel):
+    """One lens's verdict for a test case under both variants (for drill-down)."""
+
+    lens: Lens
+    score_a: float | None
+    note_a: str
+    score_b: float | None
+    note_b: str
+
+
 class CaseComparison(BaseModel):
     """One test case's aggregate score under each variant and the winner."""
 
@@ -46,6 +56,7 @@ class CaseComparison(BaseModel):
     score_b: float | None
     delta: float | None
     winner: str  # "a", "b", or "tie"
+    lenses: list[CaseLensComparison] = Field(default_factory=list)
 
 
 class ComparisonReport(BaseModel):
@@ -71,6 +82,26 @@ def _case_score(lens_results: list[LensResult]) -> float | None:
     if not present:
         return None
     return sum(present) / len(present)
+
+
+def _case_lens_comparisons(
+    a_results: list[LensResult], b_results: list[LensResult]
+) -> list[CaseLensComparison]:
+    """Pair each lens's A and B verdicts for one test case."""
+    b_by_lens = {lr.lens: lr for lr in b_results}
+    out: list[CaseLensComparison] = []
+    for ar in a_results:
+        br = b_by_lens.get(ar.lens)
+        out.append(
+            CaseLensComparison(
+                lens=ar.lens,
+                score_a=ar.score,
+                note_a=ar.note,
+                score_b=br.score if br else None,
+                note_b=br.note if br else "",
+            )
+        )
+    return out
 
 
 def _delta(a: float | None, b: float | None) -> float | None:
@@ -116,6 +147,7 @@ def build_comparison(
                 score_b=score_b,
                 delta=_delta(score_a, score_b),
                 winner=_winner(score_a, score_b),
+                lenses=_case_lens_comparisons(ra.lens_results, rb.lens_results),
             )
         )
 
@@ -164,9 +196,18 @@ def _verdict(label_a: str, label_b: str, overall_a: float | None, overall_b: flo
 
 
 async def _generate_all(
-    candidate: CandidateModel, prompt: str, cases: Sequence[TestCase]
+    candidate: CandidateModel,
+    prompt: str,
+    cases: Sequence[TestCase],
+    on_done: Callable[[], None] | None = None,
 ) -> list[str]:
-    return list(await asyncio.gather(*(candidate.generate(prompt, c) for c in cases)))
+    async def _one(case: TestCase) -> str:
+        out = await candidate.generate(prompt, case)
+        if on_done is not None:
+            on_done()
+        return out
+
+    return list(await asyncio.gather(*(_one(c) for c in cases)))
 
 
 def _make_task(cases: Sequence[TestCase], outputs: Sequence[str]):
@@ -183,11 +224,13 @@ async def run_comparison(
     judge: ModelJudge | None = None,
     label_a: str = "A",
     label_b: str = "B",
+    progress: ProgressFn | None = None,
 ) -> ComparisonReport:
     """Run both prompt variants against ``dataset`` and diff the results.
 
     Outputs for both variants are generated concurrently, then each variant is
-    graded by the dataset's enabled lenses.
+    graded by the dataset's enabled lenses. ``progress`` is an optional hook
+    called ``(completed, total)`` as the 2N candidate generations complete.
     """
     if not dataset.test_cases:
         raise EmptyDatasetWarning(f"dataset {dataset.name!r} has no test cases")
@@ -195,9 +238,18 @@ async def run_comparison(
     if Lens.JUDGE in dataset.lens_config.enabled and judge is None:
         judge = AnthropicJudge()
 
+    gen_total = 2 * len(dataset.test_cases)
+    gen_done = 0
+
+    def _tick() -> None:
+        nonlocal gen_done
+        gen_done += 1
+        if progress is not None:
+            progress(gen_done, gen_total)
+
     outputs_a, outputs_b = await asyncio.gather(
-        _generate_all(candidate, prompt_a, dataset.test_cases),
-        _generate_all(candidate, prompt_b, dataset.test_cases),
+        _generate_all(candidate, prompt_a, dataset.test_cases, _tick),
+        _generate_all(candidate, prompt_b, dataset.test_cases, _tick),
     )
 
     report_a, report_b = await asyncio.gather(

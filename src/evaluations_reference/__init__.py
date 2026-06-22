@@ -12,7 +12,7 @@ from evaluations_reference.models import (
 )
 from evaluations_reference.runner import run_eval
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "CheckSpec",

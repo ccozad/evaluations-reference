@@ -28,6 +28,8 @@ from evaluations_reference.models import (
 )
 
 Task = Callable[[TestCase], str]
+# Optional progress hook: called as (completed, total) cases are graded.
+ProgressFn = Callable[[int, int], None]
 
 
 def _output_for(case: TestCase, task: Task | None) -> str:
@@ -78,12 +80,15 @@ async def run_eval(
     dataset: EvalDataset,
     task: Task | None = None,
     judge: ModelJudge | None = None,
+    progress: ProgressFn | None = None,
 ) -> EvalReport:
     """Run ``dataset`` through its enabled lenses and aggregate the results.
 
     Raises :class:`EmptyDatasetWarning` if the dataset has no test cases. If the
     judge lens is enabled and no ``judge`` is supplied, a default
     :class:`AnthropicJudge` is constructed (which requires ``ANTHROPIC_API_KEY``).
+    ``progress`` is an optional hook called ``(completed, total)`` as cases are
+    graded.
     """
     if not dataset.test_cases:
         raise EmptyDatasetWarning(f"dataset {dataset.name!r} has no test cases")
@@ -94,19 +99,34 @@ async def run_eval(
         judge = AnthropicJudge()
 
     outputs = [_output_for(case, task) for case in dataset.test_cases]
+    total = len(dataset.test_cases)
 
-    # Judge calls fan out concurrently across all test cases.
+    # Judge calls fan out concurrently across all test cases; report progress as
+    # each completes (the judge is the slow part — code/human are near-instant).
     judge_results: list[LensResult | None]
     if Lens.JUDGE in enabled:
         assert judge is not None
+        active_judge = judge
+        done = 0
+
+        async def _judged(case: TestCase, output: str) -> LensResult:
+            nonlocal done
+            result = await _judge_lens(active_judge, case, output, dataset.rubric)
+            done += 1
+            if progress is not None:
+                progress(done, total)
+            return result
+
         judge_results = await asyncio.gather(
             *(
-                _judge_lens(judge, case, output, dataset.rubric)
+                _judged(case, output)
                 for case, output in zip(dataset.test_cases, outputs, strict=True)
             )
         )
     else:
-        judge_results = [None] * len(dataset.test_cases)
+        judge_results = [None] * total
+        if progress is not None:
+            progress(total, total)
 
     results: list[TestCaseResult] = []
     for case, output, judged in zip(dataset.test_cases, outputs, judge_results, strict=True):

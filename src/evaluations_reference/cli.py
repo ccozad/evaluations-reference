@@ -153,6 +153,14 @@ def _cmd_bootstrap(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_ui(args: argparse.Namespace) -> int:
+    # Import lazily so non-UI commands don't pay gradio's import cost.
+    from evaluations_reference import ui
+
+    ui.launch(server_name=args.host, server_port=args.port, share=args.share)
+    return 0
+
+
 def _cmd_describe(args: argparse.Namespace) -> int:
     dataset = _load_dataset(args.dataset)
     console = Console()
@@ -204,6 +212,12 @@ def main(argv: list[str] | None = None) -> int:
     boot_p.add_argument("--rubric", default=None, help="model-as-judge rubric for the dataset")
     boot_p.add_argument("--model", default=DEFAULT_BOOTSTRAP_MODEL, help="generation model")
     boot_p.set_defaults(func=_cmd_bootstrap)
+
+    ui_p = sub.add_parser("ui", help="launch the Gradio browser UI")
+    ui_p.add_argument("--host", default="127.0.0.1", help="bind host")
+    ui_p.add_argument("--port", type=int, default=7860, help="bind port")
+    ui_p.add_argument("--share", action="store_true", help="create a public Gradio share link")
+    ui_p.set_defaults(func=_cmd_ui)
 
     args = parser.parse_args(argv)
     logging.basicConfig(
